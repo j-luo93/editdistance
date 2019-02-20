@@ -20,12 +20,14 @@ try:
 except:
     from distutils import setup, Extension
 # for development
-# from Cython.Build import cythonize
+from Cython.Build import cythonize
 # ext_modules = cythonize('editdistance/bycython.pyx')
 
 ext_modules = [Extension('editdistance.bycython',
-                         ['editdistance/_editdistance.cpp', 'editdistance/bycython.cpp'],
-                         include_dirs=['./editdistance'])]
+                         ['editdistance/_editdistance.cpp', 'editdistance/bycython.pyx'],
+                         include_dirs=['./editdistance'],
+                         extra_compile_args=['-fopenmp'],
+                         extra_link_args=['-L/usr/lib/x86_64-linux-gnu/', '-fopenmp'])]
 
 setup(name="editdistance",
       version='0.5.2',
@@ -34,7 +36,7 @@ setup(name="editdistance",
       author='Hiroyuki Tanaka',
       author_email='aflc0x@gmail.com',
       url='https://www.github.com/aflc/editdistance',
-      ext_modules=ext_modules,
+      ext_modules=cythonize(ext_modules),
       packages=['editdistance'],
       package_data={'editdistance': ['_editdistance.h', 'def.h']},
       classifiers=[
