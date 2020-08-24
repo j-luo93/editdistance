@@ -36,18 +36,23 @@ cpdef unsigned int eval(object a, object b):
     _DIST_CACHE[key] = dist
     return dist
 
-DEF MAX_LEN = 40000
+# DEF MAX_LEN = 1000000
 cpdef object eval_all(object a_list, object b_list):
     cdef unsigned int i, j, l
     cdef unsigned int na = len(a_list)
     cdef unsigned int nb = len(b_list)
-    assert na <= MAX_LEN and nb <= MAX_LEN, 'na=%d, nb=%d' %(na, nb)
+    # assert na <= MAX_LEN and nb <= MAX_LEN, 'na=%d, nb=%d' %(na, nb)
     dists_storage = np.zeros([na, nb], dtype='uint32')
     cdef np.uint32_t[:, ::1] dists = dists_storage
-    cdef unsigned int a_lens[MAX_LEN]
-    cdef unsigned int b_lens[MAX_LEN]
-    cdef int64_t *al[MAX_LEN]
-    cdef int64_t *bl[MAX_LEN]
+    # cdef unsigned int a_lens[MAX_LEN]
+    # cdef unsigned int b_lens[MAX_LEN]
+    # cdef int64_t *al[MAX_LEN]
+    # cdef int64_t *bl[MAX_LEN]
+    
+    cdef unsigned int *a_lens = <unsigned int *>malloc(na * sizeof(unsigned int))
+    cdef unsigned int *b_lens = <unsigned int *>malloc(nb * sizeof(unsigned int))
+    cdef int64_t **al = <int64_t **>malloc(na * sizeof(int64_t))
+    cdef int64_t **bl = <int64_t **>malloc(nb * sizeof(int64_t))
     for i in range(na):
         a = a_list[i]
         l = len(a)
@@ -59,7 +64,7 @@ cpdef object eval_all(object a_list, object b_list):
         b_lens[i] = l
         bl[i] = hash_object(b, l)
     with nogil:
-        for i in prange(na):
+        for i in prange(na, num_threads=12):
             for j in range(nb):
                 dists[i, j] = edit_distance(al[i], a_lens[i], bl[j], b_lens[j])
     #free(al)
