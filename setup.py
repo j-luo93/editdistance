@@ -21,11 +21,12 @@ except:
     from distutils import setup, Extension
 # for development
 from Cython.Build import cythonize
+import numpy as np
 # ext_modules = cythonize('editdistance/bycython.pyx')
 
 ext_modules = [Extension('editdistance.bycython',
                          ['editdistance/_editdistance.cpp', 'editdistance/bycython.pyx'],
-                         include_dirs=['./editdistance'],
+                         include_dirs=['./editdistance', np.get_include()],
                          extra_compile_args=['-fopenmp'],
                          extra_link_args=['-L/usr/lib/x86_64-linux-gnu/', '-fopenmp'])]
 
