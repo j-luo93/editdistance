@@ -48,7 +48,7 @@ cpdef object eval_all(object a_list, object b_list):
     # cdef unsigned int b_lens[MAX_LEN]
     # cdef int64_t *al[MAX_LEN]
     # cdef int64_t *bl[MAX_LEN]
-    
+
     cdef unsigned int *a_lens = <unsigned int *>malloc(na * sizeof(unsigned int))
     cdef unsigned int *b_lens = <unsigned int *>malloc(nb * sizeof(unsigned int))
     cdef int64_t **al = <int64_t **>malloc(na * sizeof(int64_t))
@@ -71,3 +71,29 @@ cpdef object eval_all(object a_list, object b_list):
     #free(bl)
     return np.asarray(dists_storage, dtype='int64')
 
+
+cpdef object eval_batch(object a_list, object b_list):
+    cdef unsigned int i, la, lb
+    cdef unsigned int n = len(a_list)
+    dists_storage = np.zeros([n], dtype='uint32')
+    cdef np.uint32_t[::1] dists = dists_storage
+
+    cdef unsigned int *a_lens = <unsigned int *>malloc(n * sizeof(unsigned int))
+    cdef unsigned int *b_lens = <unsigned int *>malloc(n * sizeof(unsigned int))
+    cdef int64_t **al = <int64_t **>malloc(n * sizeof(int64_t))
+    cdef int64_t **bl = <int64_t **>malloc(n * sizeof(int64_t))
+    for i in range(n):
+        a = a_list[i]
+        la = len(a)
+        a_lens[i] = la
+        al[i] = hash_object(a, la)
+
+        b = b_list[i]
+        lb = len(b)
+        b_lens[i] = lb
+        bl[i] = hash_object(b, lb)
+
+    with nogil:
+        for i in prange(n, num_threads=12):
+            dists[i] = edit_distance(al[i], a_lens[i], bl[i], b_lens[i])
+    return np.asarray(dists_storage, dtype='int64')
