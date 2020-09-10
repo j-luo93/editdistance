@@ -37,7 +37,7 @@ cpdef unsigned int eval(object a, object b):
     return dist
 
 # DEF MAX_LEN = 1000000
-cpdef object eval_all(object a_list, object b_list):
+cpdef object eval_all(object a_list, object b_list, unsigned int num_threads):
     cdef unsigned int i, j, l
     cdef unsigned int na = len(a_list)
     cdef unsigned int nb = len(b_list)
@@ -64,7 +64,7 @@ cpdef object eval_all(object a_list, object b_list):
         b_lens[i] = l
         bl[i] = hash_object(b, l)
     with nogil:
-        for i in prange(na, num_threads=12):
+        for i in prange(na, num_threads=num_threads):
             for j in range(nb):
                 dists[i, j] = edit_distance(al[i], a_lens[i], bl[j], b_lens[j])
     #free(al)
@@ -72,7 +72,7 @@ cpdef object eval_all(object a_list, object b_list):
     return np.asarray(dists_storage, dtype='int64')
 
 
-cpdef object eval_batch(object a_list, object b_list):
+cpdef object eval_batch(object a_list, object b_list, unsigned int num_threads):
     cdef unsigned int i, la, lb
     cdef unsigned int n = len(a_list)
     dists_storage = np.zeros([n], dtype='uint32')
@@ -94,6 +94,6 @@ cpdef object eval_batch(object a_list, object b_list):
         bl[i] = hash_object(b, lb)
 
     with nogil:
-        for i in prange(n, num_threads=12):
+        for i in prange(n, num_threads=num_threads):
             dists[i] = edit_distance(al[i], a_lens[i], bl[i], b_lens[i])
     return np.asarray(dists_storage, dtype='int64')
