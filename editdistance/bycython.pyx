@@ -9,6 +9,8 @@ cimport numpy as np
 import numpy as np
 from cachetools import LRUCache
 
+from libc.stdio cimport printf
+
 cdef extern from "./_editdistance.h" nogil:
     ctypedef int int64_t
     unsigned int edit_distance(const int64_t *a, const unsigned int asize, const int64_t *b, const unsigned int bsize)
@@ -35,6 +37,7 @@ cpdef unsigned int eval(object a, object b):
     free(bl)
     _DIST_CACHE[key] = dist
     return dist
+
 
 # DEF MAX_LEN = 1000000
 cpdef object eval_all(object a_list, object b_list, unsigned int num_threads):
@@ -93,7 +96,11 @@ cpdef object eval_batch(object a_list, object b_list, unsigned int num_threads):
         b_lens[i] = lb
         bl[i] = hash_object(b, lb)
 
-    with nogil:
-        for i in prange(n, num_threads=num_threads):
+    if num_threads == 0:
+        for i in range(n):
             dists[i] = edit_distance(al[i], a_lens[i], bl[i], b_lens[i])
+    else:
+        with nogil:
+            for i in prange(n, num_threads=num_threads):
+                dists[i] = edit_distance(al[i], a_lens[i], bl[i], b_lens[i])
     return np.asarray(dists_storage, dtype='int64')
